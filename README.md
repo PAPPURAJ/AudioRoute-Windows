@@ -62,3 +62,23 @@ powershell -ExecutionPolicy Bypass -File .\scripts\Build-Installer.ps1 -AppVersi
 Output:
 
 - `dist\installer\AudioRoute-Setup-1.0.10.exe`
+
+## GitHub release automation
+
+This repo now includes two GitHub Actions workflows:
+
+- `.github/workflows/create-release-tag.yml`
+  - Run this manually from the Actions tab.
+  - It finds the latest `vX.Y.Z` tag, increments `patch`, `minor`, or `major`, and pushes the next tag automatically.
+- `.github/workflows/build-release.yml`
+  - Runs when a tag like `v1.0.11` is pushed.
+  - Builds the portable EXE, portable ZIP, and installer EXE.
+  - Creates a GitHub Release and uploads all three files as release assets.
+
+Release flow:
+
+1. Open GitHub Actions.
+2. Run `Create Release Tag`.
+3. Choose `patch`, `minor`, or `major`.
+4. Wait for the new tag to trigger `Build Release Assets`.
+5. Download the EXE or installer from the GitHub Release page.

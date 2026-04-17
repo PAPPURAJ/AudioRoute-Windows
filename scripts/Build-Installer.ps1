@@ -1,6 +1,7 @@
 param(
     [string]$AppVersion = "1.0.10",
-    [string]$OutputSuffix = ""
+    [string]$OutputSuffix = "",
+    [string]$Version = ""
 )
 
 $ErrorActionPreference = "Stop"
@@ -11,7 +12,11 @@ $issPath = Join-Path $root "installer\AudioRoute.iss"
 $publishDirName = if ([string]::IsNullOrWhiteSpace($OutputSuffix)) { "win-x64" } else { "win-x64-$OutputSuffix" }
 $publishDir = Join-Path $root "dist\portable\$publishDirName"
 
-& $publishScript -OutputSuffix $OutputSuffix
+& $publishScript -OutputSuffix $OutputSuffix -Version $Version
+
+if ($LASTEXITCODE -ne 0 -or -not (Test-Path $publishDir)) {
+    throw "Portable publish failed. Installer build cannot continue."
+}
 
 $isccCandidates = @(
     (Get-Command iscc -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source),
@@ -28,7 +33,7 @@ if (-not $iscc) {
 & $iscc "/DAppVersion=$AppVersion" "/DPublishDir=$publishDir" $issPath
 
 if ($LASTEXITCODE -ne 0) {
-    exit $LASTEXITCODE
+    throw "Inno Setup compile failed with exit code $LASTEXITCODE."
 }
 
 Write-Host "Installer output: $(Join-Path $root 'dist\installer')"
