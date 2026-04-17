@@ -1,0 +1,12 @@
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\AudioRoute.exe
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\AudioRoute.dll
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\AudioRoute.deps.json
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\AudioRoute.runtimeconfig.json
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\AudioRoute.pdb
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\NAudio.dll
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\NAudio.Asio.dll
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\NAudio.Core.dll
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\NAudio.Midi.dll
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\NAudio.Wasapi.dll
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\NAudio.WinForms.dll
+D:\My Projects\Windows\AudioRoute\AudioRoute\bin\Release\net8.0-windows\win-x64\publish\NAudio.WinMM.dll
