@@ -1,6 +1,9 @@
 name: Create Release Tag
 
 on:
+  push:
+    branches:
+      - master
   workflow_dispatch:
     inputs:
       bump:
@@ -34,7 +37,23 @@ jobs:
       - name: Compute next version
         id: version
         shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_BUMP: ${{ inputs.bump }}
+          HEAD_COMMIT_MESSAGE: ${{ github.event.head_commit.message }}
         run: |
+          if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            bump_type="$INPUT_BUMP"
+          else
+            bump_type="patch"
+
+            if printf '%s' "$HEAD_COMMIT_MESSAGE" | grep -Eiq '(\[major\]|#major)'; then
+              bump_type="major"
+            elif printf '%s' "$HEAD_COMMIT_MESSAGE" | grep -Eiq '(\[minor\]|#minor)'; then
+              bump_type="minor"
+            fi
+          fi
+
           latest_tag="$(git tag --list 'v*' --sort=-version:refname | head -n 1)"
 
           if [ -z "$latest_tag" ]; then
@@ -46,7 +65,7 @@ jobs:
             IFS='.' read -r major minor patch <<< "$version"
           fi
 
-          case "${{ inputs.bump }}" in
+          case "$bump_type" in
             major)
               major=$((major + 1))
               minor=0
@@ -60,7 +79,7 @@ jobs:
               patch=$((patch + 1))
               ;;
             *)
-              echo "Unsupported bump type: ${{ inputs.bump }}"
+              echo "Unsupported bump type: $bump_type"
               exit 1
               ;;
           esac
@@ -68,6 +87,7 @@ jobs:
           next_version="${major}.${minor}.${patch}"
           next_tag="v${next_version}"
 
+          echo "bump_type=${bump_type}" >> "$GITHUB_OUTPUT"
           echo "version=${next_version}" >> "$GITHUB_OUTPUT"
           echo "tag=${next_tag}" >> "$GITHUB_OUTPUT"
 
@@ -78,4 +98,4 @@ jobs:
 
       - name: Summary
         run: |
-          echo "Created tag ${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "Created tag ${{ steps.version.outputs.tag }} using ${{ steps.version.outputs.bump_type }} bump" >> "$GITHUB_STEP_SUMMARY"
