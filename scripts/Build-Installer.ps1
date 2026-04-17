@@ -1,22 +1,30 @@
 param(
     [string]$AppVersion = "1.0.10",
     [string]$OutputSuffix = "",
-    [string]$Version = ""
+    [string]$Version = "",
+    [string]$PublisherName = "PAPPURAJ",
+    [string]$PublisherUrl = "https://github.com/PAPPURAJ/AudioRoute-Windows",
+    [string]$SigningCertPath = "",
+    [string]$SigningCertPassword = ""
 )
 
 $ErrorActionPreference = "Stop"
 
 $root = Split-Path -Path $PSScriptRoot -Parent
 $publishScript = Join-Path $PSScriptRoot "Publish-SelfContained.ps1"
+$signScript = Join-Path $PSScriptRoot "Sign-File.ps1"
 $issPath = Join-Path $root "installer\AudioRoute.iss"
 $publishDirName = if ([string]::IsNullOrWhiteSpace($OutputSuffix)) { "win-x64" } else { "win-x64-$OutputSuffix" }
 $publishDir = Join-Path $root "dist\portable\$publishDirName"
+$portableExe = Join-Path $publishDir "AudioRoute.exe"
 
 & $publishScript -OutputSuffix $OutputSuffix -Version $Version
 
 if ($LASTEXITCODE -ne 0 -or -not (Test-Path $publishDir)) {
     throw "Portable publish failed. Installer build cannot continue."
 }
+
+& $signScript -FilePath $portableExe -CertPath $SigningCertPath -CertPassword $SigningCertPassword
 
 $isccCandidates = @(
     (Get-Command iscc -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source),
@@ -30,10 +38,17 @@ if (-not $iscc) {
     throw "Inno Setup compiler not found. Install it with: winget install JRSoftware.InnoSetup"
 }
 
-& $iscc "/DAppVersion=$AppVersion" "/DPublishDir=$publishDir" $issPath
+& $iscc "/DAppVersion=$AppVersion" "/DPublishDir=$publishDir" "/DAppPublisherName=$PublisherName" "/DAppPublisherUrl=$PublisherUrl" $issPath
 
 if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup compile failed with exit code $LASTEXITCODE."
 }
+
+Get-ChildItem (Join-Path $root "dist\installer\AudioRoute-Setup-$AppVersion*.exe") |
+    Sort-Object LastWriteTime -Descending |
+    Select-Object -First 1 |
+    ForEach-Object {
+        & $signScript -FilePath $_.FullName -CertPath $SigningCertPath -CertPassword $SigningCertPassword
+    }
 
 Write-Host "Installer output: $(Join-Path $root 'dist\installer')"

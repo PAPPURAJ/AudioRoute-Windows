@@ -123,6 +123,15 @@ jobs:
         shell: powershell
         run: choco install innosetup --no-progress -y
 
+      - name: Prepare signing certificate
+        if: ${{ secrets.WINDOWS_SIGNING_CERT_BASE64 != '' }}
+        id: signing
+        shell: powershell
+        run: |
+          $certPath = Join-Path $env:RUNNER_TEMP 'codesign.pfx'
+          [IO.File]::WriteAllBytes($certPath, [Convert]::FromBase64String("${{ secrets.WINDOWS_SIGNING_CERT_BASE64 }}"))
+          "cert_path=$certPath" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
       - name: Resolve release paths
         id: paths
         shell: powershell
@@ -139,7 +148,9 @@ jobs:
           powershell -ExecutionPolicy Bypass -File .\scripts\Build-Installer.ps1 `
             -AppVersion "${{ needs.create-tag.outputs.version }}" `
             -Version "${{ needs.create-tag.outputs.version }}" `
-            -OutputSuffix "${{ needs.create-tag.outputs.version }}"
+            -OutputSuffix "${{ needs.create-tag.outputs.version }}" `
+            -SigningCertPath "${{ steps.signing.outputs.cert_path }}" `
+            -SigningCertPassword "${{ secrets.WINDOWS_SIGNING_CERT_PASSWORD }}"
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4

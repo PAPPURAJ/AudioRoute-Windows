@@ -1,4 +1,10 @@
 #define AppName "AudioRoute"
+#ifndef AppPublisherName
+  #define AppPublisherName "PAPPURAJ"
+#endif
+#ifndef AppPublisherUrl
+  #define AppPublisherUrl "https://github.com/PAPPURAJ/AudioRoute-Windows"
+#endif
 #ifndef AppVersion
   #define AppVersion "1.0.10"
 #endif
@@ -10,7 +16,10 @@
 AppId={{7A30654A-D53C-4F67-B7A6-A0DD78A11881}
 AppName={#AppName}
 AppVersion={#AppVersion}
-AppPublisher=AudioRoute
+AppPublisher={#AppPublisherName}
+AppPublisherURL={#AppPublisherUrl}
+AppSupportURL={#AppPublisherUrl}
+AppUpdatesURL={#AppPublisherUrl}
 DefaultDirName={autopf}\{#AppName}
 DefaultGroupName={#AppName}
 DisableProgramGroupPage=yes

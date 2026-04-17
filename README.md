@@ -81,6 +81,22 @@ This repo now includes two GitHub Actions workflows:
   - Builds the portable EXE, portable ZIP, and installer EXE.
   - Creates a GitHub Release and uploads all three files as release assets.
 
+## SmartScreen and publisher warning
+
+`Unknown publisher` happens because Windows only trusts signed installers and executables.
+
+This repo now supports optional Authenticode signing during the GitHub release build:
+
+- add `WINDOWS_SIGNING_CERT_BASE64` as a GitHub Actions secret containing your `.pfx` certificate encoded as base64
+- add `WINDOWS_SIGNING_CERT_PASSWORD` as the certificate password
+
+If those secrets are present, the release workflow signs:
+
+- `AudioRoute.exe`
+- `AudioRoute-Setup-<version>.exe`
+
+Without a real code-signing certificate, SmartScreen warnings cannot be fully solved.
+
 Release flow:
 
 1. Push to `master`.
