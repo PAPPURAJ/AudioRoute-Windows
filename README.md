@@ -70,12 +70,14 @@ This repo now includes two GitHub Actions workflows:
 - `.github/workflows/create-release-tag.yml`
   - Runs automatically on every push to `master`.
   - Finds the latest `vX.Y.Z` tag and pushes the next tag automatically.
+  - In the same workflow run, it also builds the portable EXE, portable ZIP, and installer EXE.
+  - It creates the GitHub Release and uploads those files directly.
   - Default bump is `patch`.
   - If the latest commit message contains `[minor]` or `#minor`, it bumps `minor`.
   - If the latest commit message contains `[major]` or `#major`, it bumps `major`.
   - It can still be run manually from the Actions tab if you want.
 - `.github/workflows/build-release.yml`
-  - Runs when a tag like `v1.0.11` is pushed.
+  - Runs only as a fallback when a tag like `v1.0.11` is pushed manually from outside GitHub Actions.
   - Builds the portable EXE, portable ZIP, and installer EXE.
   - Creates a GitHub Release and uploads all three files as release assets.
 
@@ -83,7 +85,7 @@ Release flow:
 
 1. Push to `master`.
 2. `Create Release Tag` automatically creates the next tag.
-3. That tag triggers `Build Release Assets`.
+3. That same workflow builds the EXE and installer and publishes the GitHub Release.
 4. Download the EXE or installer from the GitHub Release page.
 
 Examples:

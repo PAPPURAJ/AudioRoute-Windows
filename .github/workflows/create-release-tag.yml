@@ -22,6 +22,9 @@ permissions:
 jobs:
   create-tag:
     runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.version.outputs.tag }}
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout
@@ -99,3 +102,61 @@ jobs:
       - name: Summary
         run: |
           echo "Created tag ${{ steps.version.outputs.tag }} using ${{ steps.version.outputs.bump_type }} bump" >> "$GITHUB_STEP_SUMMARY"
+
+  build-release:
+    runs-on: windows-latest
+    needs: create-tag
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.create-tag.outputs.tag }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Install Inno Setup
+        shell: powershell
+        run: choco install innosetup --no-progress -y
+
+      - name: Resolve release paths
+        id: paths
+        shell: powershell
+        run: |
+          $version = "${{ needs.create-tag.outputs.version }}"
+          "portable_dir=dist/portable/win-x64-$version" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "portable_exe=dist/portable/win-x64-$version/AudioRoute.exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "portable_zip=dist/AudioRoute-win-x64-$version-portable.zip" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+          "installer_exe=dist/installer/AudioRoute-Setup-$version.exe" | Out-File -FilePath $env:GITHUB_OUTPUT -Append
+
+      - name: Build portable and installer
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File .\scripts\Build-Installer.ps1 `
+            -AppVersion "${{ needs.create-tag.outputs.version }}" `
+            -Version "${{ needs.create-tag.outputs.version }}" `
+            -OutputSuffix "${{ needs.create-tag.outputs.version }}"
+
+      - name: Upload workflow artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AudioRoute-${{ needs.create-tag.outputs.version }}
+          path: |
+            ${{ steps.paths.outputs.portable_exe }}
+            ${{ steps.paths.outputs.portable_zip }}
+            ${{ steps.paths.outputs.installer_exe }}
+          if-no-files-found: error
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.create-tag.outputs.tag }}
+          generate_release_notes: true
+          files: |
+            ${{ steps.paths.outputs.portable_exe }}
+            ${{ steps.paths.outputs.portable_zip }}
+            ${{ steps.paths.outputs.installer_exe }}
