@@ -148,12 +148,22 @@ jobs:
       - name: Build portable and installer
         shell: powershell
         run: |
-          powershell -ExecutionPolicy Bypass -File .\scripts\Build-Installer.ps1 `
-            -AppVersion "${{ needs.create-tag.outputs.version }}" `
-            -Version "${{ needs.create-tag.outputs.version }}" `
-            -OutputSuffix "${{ needs.create-tag.outputs.version }}" `
-            -SigningCertPath "${{ steps.signing.outputs.cert_path }}" `
-            -SigningCertPassword "${{ env.WINDOWS_SIGNING_CERT_PASSWORD }}"
+          $arguments = @(
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\scripts\Build-Installer.ps1',
+            '-AppVersion', "${{ needs.create-tag.outputs.version }}",
+            '-Version', "${{ needs.create-tag.outputs.version }}",
+            '-OutputSuffix', "${{ needs.create-tag.outputs.version }}"
+          )
+
+          if (-not [string]::IsNullOrWhiteSpace("${{ steps.signing.outputs.cert_path }}")) {
+            $arguments += @(
+              '-SigningCertPath', "${{ steps.signing.outputs.cert_path }}",
+              '-SigningCertPassword', "${{ env.WINDOWS_SIGNING_CERT_PASSWORD }}"
+            )
+          }
+
+          & powershell @arguments
 
       - name: Upload workflow artifacts
         uses: actions/upload-artifact@v4
