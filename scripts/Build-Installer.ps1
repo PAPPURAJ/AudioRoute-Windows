@@ -2,8 +2,8 @@ param(
     [string]$AppVersion = "1.0.10",
     [string]$OutputSuffix = "",
     [string]$Version = "",
-    [string]$PublisherName = "PAPPURAJ",
-    [string]$PublisherUrl = "https://github.com/PAPPURAJ/AudioRoute-Windows",
+    [string]$PublisherName = "Pappuraj Bhottacharjee",
+    [string]$PublisherUrl = "https://pappuraj.com",
     [string]$SigningCertPath = "",
     [string]$SigningCertPassword = ""
 )
@@ -13,10 +13,12 @@ $ErrorActionPreference = "Stop"
 $root = Split-Path -Path $PSScriptRoot -Parent
 $publishScript = Join-Path $PSScriptRoot "Publish-SelfContained.ps1"
 $signScript = Join-Path $PSScriptRoot "Sign-File.ps1"
+$verifySignatureScript = Join-Path $PSScriptRoot "Verify-Signature.ps1"
 $issPath = Join-Path $root "installer\AudioRoute.iss"
 $publishDirName = if ([string]::IsNullOrWhiteSpace($OutputSuffix)) { "win-x64" } else { "win-x64-$OutputSuffix" }
 $publishDir = Join-Path $root "dist\portable\$publishDirName"
 $portableExe = Join-Path $publishDir "AudioRoute.exe"
+$shouldVerifySigning = -not [string]::IsNullOrWhiteSpace($SigningCertPath) -and (Test-Path $SigningCertPath)
 
 & $publishScript -OutputSuffix $OutputSuffix -Version $Version
 
@@ -25,6 +27,10 @@ if ($LASTEXITCODE -ne 0 -or -not (Test-Path $publishDir)) {
 }
 
 & $signScript -FilePath $portableExe -CertPath $SigningCertPath -CertPassword $SigningCertPassword
+
+if ($shouldVerifySigning) {
+    & $verifySignatureScript -FilePath $portableExe
+}
 
 $isccCandidates = @(
     (Get-Command iscc -ErrorAction SilentlyContinue | Select-Object -ExpandProperty Source),
@@ -44,11 +50,18 @@ if ($LASTEXITCODE -ne 0) {
     throw "Inno Setup compile failed with exit code $LASTEXITCODE."
 }
 
-Get-ChildItem (Join-Path $root "dist\installer\AudioRoute-Setup-$AppVersion*.exe") |
+$installerExe = Get-ChildItem (Join-Path $root "dist\installer\AudioRoute-Setup-$AppVersion*.exe") |
     Sort-Object LastWriteTime -Descending |
-    Select-Object -First 1 |
-    ForEach-Object {
-        & $signScript -FilePath $_.FullName -CertPath $SigningCertPath -CertPassword $SigningCertPassword
-    }
+    Select-Object -First 1
+
+if ($null -eq $installerExe) {
+    throw "Installer output file was not found."
+}
+
+& $signScript -FilePath $installerExe.FullName -CertPath $SigningCertPath -CertPassword $SigningCertPassword
+
+if ($shouldVerifySigning) {
+    & $verifySignatureScript -FilePath $installerExe.FullName
+}
 
 Write-Host "Installer output: $(Join-Path $root 'dist\installer')"
